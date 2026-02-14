@@ -8,12 +8,12 @@ export async function POST(req: Request) {
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Missing GEMINI_API_KEY" },
+        { error: "❌ Missing GEMINI_API_KEY in Vercel" },
         { status: 500 }
       );
     }
 
-    // ✅ Updated Model (Fix Pending Issue)
+    // ✅ Call Gemini Model
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
@@ -23,7 +23,9 @@ export async function POST(req: Request) {
           contents: [
             {
               parts: [
-                { text: "Identify this flower and give name clearly." },
+                {
+                  text: "Identify this flower. Reply only flower name.",
+                },
                 {
                   inlineData: {
                     mimeType: "image/jpeg",
@@ -39,10 +41,26 @@ export async function POST(req: Request) {
 
     const data = await response.json();
 
-    return NextResponse.json(data);
+    console.log("Gemini Raw Data:", data);
+
+    // ✅ Extract Result Text Safely
+    const flowerText =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    // ✅ If Gemini returns nothing
+    if (!flowerText) {
+      return NextResponse.json({
+        result: "❌ No flower identified",
+      });
+    }
+
+    // ✅ Return Clean Output
+    return NextResponse.json({
+      result: flowerText,
+    });
   } catch (err) {
     return NextResponse.json(
-      { error: "Server Error", details: err },
+      { error: "❌ Server Error", details: err },
       { status: 500 }
     );
   }

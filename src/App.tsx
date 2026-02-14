@@ -19,9 +19,10 @@ export default function App() {
 
     reader.onloadend = async () => {
       try {
+        // ✅ Convert image to Base64
         const base64 = reader.result?.toString().split(",")[1];
 
-        // ✅ Call Backend API
+        // ✅ Call Backend API (Send image + mimeType)
         const res = await fetch("/api/identify", {
           method: "POST",
           headers: {
@@ -29,6 +30,7 @@ export default function App() {
           },
           body: JSON.stringify({
             image: base64,
+            mimeType: image.type, // ✅ FIX: Supports JPG + PNG
           }),
         });
 
@@ -36,11 +38,11 @@ export default function App() {
 
         console.log("Backend Response:", data);
 
-        // ✅ FINAL FIX: Read Clean Result
+        // ✅ Show Result
         if (data.result) {
           setResult("🌸 Flower Identified:\n\n" + data.result);
         } else if (data.error) {
-          setResult("❌ Gemini Error: " + data.error);
+          setResult("❌ Gemini Error:\n" + data.error);
         } else {
           setResult("❌ No flower identified");
         }
@@ -85,6 +87,8 @@ export default function App() {
       {image && (
         <p style={{ fontSize: "16px" }}>
           ✅ Selected: <b>{image.name}</b>
+          <br />
+          📌 Type: <b>{image.type}</b>
         </p>
       )}
 

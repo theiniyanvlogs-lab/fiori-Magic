@@ -5,7 +5,7 @@ export default function App() {
   const [result, setResult] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Button click function
+  // ✅ Identify Flower Function
   const handleIdentify = async () => {
     if (!image) {
       alert("Please upload a flower image first!");
@@ -15,14 +15,13 @@ export default function App() {
     setLoading(true);
     setResult("🌼 Identifying flower... Please wait");
 
-    // ✅ Convert image to Base64
     const reader = new FileReader();
 
     reader.onloadend = async () => {
       try {
         const base64 = reader.result?.toString().split(",")[1];
 
-        // ✅ Call Backend API Route
+        // ✅ Call Backend API
         const res = await fetch("/api/identify", {
           method: "POST",
           headers: {
@@ -35,13 +34,16 @@ export default function App() {
 
         const data = await res.json();
 
-        console.log("Gemini Response:", data);
+        console.log("Backend Response:", data);
 
-        // ✅ Extract flower text from Gemini response
-        const flowerText =
-          data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        setResult(flowerText || "❌ No flower identified");
+        // ✅ FINAL FIX: Read Clean Result
+        if (data.result) {
+          setResult("🌸 Flower Identified:\n\n" + data.result);
+        } else if (data.error) {
+          setResult("❌ Gemini Error: " + data.error);
+        } else {
+          setResult("❌ No flower identified");
+        }
       } catch (err) {
         console.error("Error:", err);
         setResult("❌ Error identifying flower");
@@ -79,7 +81,7 @@ export default function App() {
       <br />
       <br />
 
-      {/* Show selected image name */}
+      {/* Selected File */}
       {image && (
         <p style={{ fontSize: "16px" }}>
           ✅ Selected: <b>{image.name}</b>

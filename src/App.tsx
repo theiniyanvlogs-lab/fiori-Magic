@@ -3,16 +3,54 @@ import { useState } from "react";
 export default function App() {
   const [image, setImage] = useState<File | null>(null);
   const [result, setResult] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
-  // Button click function (AI will be added next)
-  const handleIdentify = () => {
+  // ✅ Button click function
+  const handleIdentify = async () => {
     if (!image) {
       alert("Please upload a flower image first!");
       return;
     }
 
-    // Temporary output
-    setResult("🌼 Identifying flower... (Gemini AI will be connected next)");
+    setLoading(true);
+    setResult("🌼 Identifying flower... Please wait");
+
+    // ✅ Convert image to Base64
+    const reader = new FileReader();
+
+    reader.onloadend = async () => {
+      try {
+        const base64 = reader.result?.toString().split(",")[1];
+
+        // ✅ Call Backend API Route
+        const res = await fetch("/api/identify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            image: base64,
+          }),
+        });
+
+        const data = await res.json();
+
+        console.log("Gemini Response:", data);
+
+        // ✅ Extract flower text from Gemini response
+        const flowerText =
+          data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        setResult(flowerText || "❌ No flower identified");
+      } catch (err) {
+        console.error("Error:", err);
+        setResult("❌ Error identifying flower");
+      }
+
+      setLoading(false);
+    };
+
+    reader.readAsDataURL(image);
   };
 
   return (
@@ -53,9 +91,10 @@ export default function App() {
       {/* Identify Button */}
       <button
         onClick={handleIdentify}
+        disabled={loading}
         style={{
           padding: "14px 30px",
-          backgroundColor: "#0f9d58",
+          backgroundColor: loading ? "gray" : "#0f9d58",
           color: "white",
           border: "none",
           borderRadius: "12px",
@@ -63,7 +102,7 @@ export default function App() {
           cursor: "pointer",
         }}
       >
-        Identify Flower 🌼
+        {loading ? "Identifying..." : "Identify Flower 🌼"}
       </button>
 
       <br />
@@ -78,6 +117,7 @@ export default function App() {
             borderRadius: "12px",
             background: "#f0fdf4",
             fontSize: "18px",
+            whiteSpace: "pre-line",
           }}
         >
           {result}

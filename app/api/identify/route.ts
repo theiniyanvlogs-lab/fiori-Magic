@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { image } = await req.json();
+    // ✅ Receive image + mimeType from frontend
+    const { image, mimeType } = await req.json();
 
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Image size protection (Very Important)
+    // ✅ Image size protection
     if (!image || image.length > 3_000_000) {
       return NextResponse.json(
         { error: "Image too large. Upload smaller flower image." },
@@ -23,8 +24,9 @@ export async function POST(req: Request) {
 
     // ✅ Timeout Controller (Fix Infinite Loading)
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000); // 15 sec
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
+    // ✅ Call Gemini API
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
@@ -38,7 +40,8 @@ export async function POST(req: Request) {
                 { text: "Identify this flower. Reply only flower name." },
                 {
                   inlineData: {
-                    mimeType: "image/jpeg",
+                    // ✅ FIX: Supports JPG + PNG automatically
+                    mimeType: mimeType || "image/jpeg",
                     data: image,
                   },
                 },
@@ -63,6 +66,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ Extract Flower Name
     const flowerText =
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
 

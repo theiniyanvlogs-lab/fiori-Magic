@@ -1,12 +1,19 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { FlowerDetails } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+/* ✅ Correct API Key (Vite + Vercel) */
+const ai = new GoogleGenAI({
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY || "",
+});
 
-export const identifyFlower = async (base64Image: string): Promise<FlowerDetails> => {
-  const model = 'gemini-3-flash-preview';
-  
+/* ---------------------------------------------------
+   ✅ Identify Flower Function
+--------------------------------------------------- */
+export const identifyFlower = async (
+  base64Image: string
+): Promise<FlowerDetails> => {
+  const model = "gemini-3-flash-preview";
+
   const prompt = `Identify this flower. Provide the following details in a structured JSON format:
   - commonName: The most widely used name.
   - scientificName: The Latin botanical name.
@@ -18,8 +25,8 @@ export const identifyFlower = async (base64Image: string): Promise<FlowerDetails
   - flowerType: Is it primarily a wildflower or a garden flower?
   - funFact: An interesting trivia about this flower.
   - origin: A brief history or geographical origin.
-  
-  If the image does not contain a flower, please return placeholder values indicating that a flower wasn't detected.`;
+
+  If the image does not contain a flower, return placeholder values saying "No flower detected".`;
 
   const response = await ai.models.generateContent({
     model,
@@ -27,8 +34,8 @@ export const identifyFlower = async (base64Image: string): Promise<FlowerDetails
       parts: [
         {
           inlineData: {
-            mimeType: 'image/jpeg',
-            data: base64Image.split(',')[1] || base64Image,
+            mimeType: "image/jpeg",
+            data: base64Image.split(",")[1] || base64Image,
           },
         },
         { text: prompt },
@@ -50,24 +57,41 @@ export const identifyFlower = async (base64Image: string): Promise<FlowerDetails
           funFact: { type: Type.STRING },
           origin: { type: Type.STRING },
         },
-        required: ["commonName", "scientificName", "description", "sun", "soilNeeds", "bloomsIn", "naturalHabitat", "flowerType", "funFact", "origin"],
+        required: [
+          "commonName",
+          "scientificName",
+          "description",
+          "sun",
+          "soilNeeds",
+          "bloomsIn",
+          "naturalHabitat",
+          "flowerType",
+          "funFact",
+          "origin",
+        ],
       },
     },
   });
 
   try {
-    const jsonStr = response.text.trim();
-    return JSON.parse(jsonStr) as FlowerDetails;
+    return JSON.parse(response.text.trim()) as FlowerDetails;
   } catch (error) {
     console.error("Failed to parse Gemini response:", error);
     throw new Error("Could not understand the flower details.");
   }
 };
 
-export const translateDetailsToTamil = async (details: FlowerDetails): Promise<NonNullable<FlowerDetails['tamil']>> => {
-  const model = 'gemini-3-flash-preview';
-  
-  const prompt = `Translate the following flower information into Tamil. Ensure the translation is natural and accurate for a gardening context. Return only the JSON:
+/* ---------------------------------------------------
+   ✅ Translate Details into Tamil
+--------------------------------------------------- */
+export const translateDetailsToTamil = async (
+  details: FlowerDetails
+): Promise<NonNullable<FlowerDetails["tamil"]>> => {
+  const model = "gemini-3-flash-preview";
+
+  const prompt = `Translate the following flower information into Tamil. 
+Return only JSON:
+
   Common Name: ${details.commonName}
   Description: ${details.description}
   Sun: ${details.sun}
@@ -94,7 +118,16 @@ export const translateDetailsToTamil = async (details: FlowerDetails): Promise<N
           flowerType: { type: Type.STRING },
           funFact: { type: Type.STRING },
         },
-        required: ["commonName", "description", "sun", "soilNeeds", "bloomsIn", "naturalHabitat", "flowerType", "funFact"],
+        required: [
+          "commonName",
+          "description",
+          "sun",
+          "soilNeeds",
+          "bloomsIn",
+          "naturalHabitat",
+          "flowerType",
+          "funFact",
+        ],
       },
     },
   });

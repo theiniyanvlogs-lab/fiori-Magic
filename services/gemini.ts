@@ -4,24 +4,21 @@ import { FlowerDetails } from "../types";
 /* ✅ Correct Vite Environment Variable */
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-if (!API_KEY) {
-  throw new Error("❌ Gemini API Key missing. Add VITE_GEMINI_API_KEY in Vercel.");
-}
-
-/* ✅ Gemini Client */
+/* ✅ Gemini AI Client */
 const ai = new GoogleGenAI({
   apiKey: API_KEY,
 });
 
-/* ----------------------------------------------------
+/* ---------------------------------------------------
    ✅ Identify Flower Function
----------------------------------------------------- */
+--------------------------------------------------- */
 export const identifyFlower = async (
   base64Image: string
 ): Promise<FlowerDetails> => {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-3-flash-preview";
 
   const prompt = `Identify this flower. Provide the following details in JSON:
+
   - commonName
   - scientificName
   - description (2 sentences)
@@ -33,7 +30,7 @@ export const identifyFlower = async (
   - funFact
   - origin
 
-  If not a flower, return placeholder values.`;
+  If no flower is detected, return placeholder values.`;
 
   const response = await ai.models.generateContent({
     model,
@@ -83,24 +80,25 @@ export const identifyFlower = async (
   return JSON.parse(response.text.trim());
 };
 
-/* ----------------------------------------------------
-   ✅ Translate Flower Details to Tamil
----------------------------------------------------- */
+/* ---------------------------------------------------
+   ✅ Translate to Tamil Function
+--------------------------------------------------- */
 export const translateDetailsToTamil = async (
   details: FlowerDetails
 ): Promise<NonNullable<FlowerDetails["tamil"]>> => {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-3-flash-preview";
 
-  const prompt = `Translate into Tamil (gardening context). Return only JSON:
+  const prompt = `Translate the following flower info into Tamil.
+Return only JSON:
 
-  Common Name: ${details.commonName}
-  Description: ${details.description}
-  Sun: ${details.sun}
-  Soil Needs: ${details.soilNeeds}
-  Blooms In: ${details.bloomsIn}
-  Natural Habitat: ${details.naturalHabitat}
-  Flower Type: ${details.flowerType}
-  Fun Fact: ${details.funFact}`;
+Common Name: ${details.commonName}
+Description: ${details.description}
+Sun: ${details.sun}
+Soil Needs: ${details.soilNeeds}
+Blooms In: ${details.bloomsIn}
+Natural Habitat: ${details.naturalHabitat}
+Flower Type: ${details.flowerType}
+Fun Fact: ${details.funFact}`;
 
   const response = await ai.models.generateContent({
     model,

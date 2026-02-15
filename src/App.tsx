@@ -7,7 +7,7 @@ export default function App() {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Identify Flower Function
+  // ✅ Identify Flower (Hugging Face API)
   const handleIdentify = async () => {
     if (!image) {
       alert("🌸 Please upload a flower image first!");
@@ -27,7 +27,8 @@ export default function App() {
 
     reader.onloadend = async () => {
       try {
-        const base64 = reader.result?.toString().split(",")[1];
+        // ✅ Hugging Face needs FULL base64 Data URL
+        const base64 = reader.result?.toString();
 
         // ✅ Call Backend API
         const res = await fetch("/api/identify", {
@@ -37,13 +38,12 @@ export default function App() {
           },
           body: JSON.stringify({
             image: base64,
-            mimeType: image.type, // ✅ Supports JPG + PNG
           }),
         });
 
         const data = await res.json();
 
-        console.log("Gemini Response:", data);
+        console.log("Hugging Face Response:", data);
 
         // ✅ Show Result
         if (data.result) {
@@ -85,7 +85,7 @@ export default function App() {
       {/* Title */}
       <h1 style={{ fontSize: "34px" }}>🌸 Trova Fiori</h1>
       <p style={{ fontSize: "18px", marginBottom: "25px" }}>
-        Upload a flower image and identify it using Gemini AI.
+        Upload a flower image and identify it using Hugging Face AI.
       </p>
 
       {/* Upload Input */}

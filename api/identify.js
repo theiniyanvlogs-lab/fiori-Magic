@@ -13,11 +13,12 @@ export default async function handler(req, res) {
     const hfKey = process.env.HF_API_KEY;
 
     if (!hfKey) {
-      return res.status(500).json({ error: "HF_API_KEY missing in Vercel" });
+      return res.status(500).json({ error: "Missing HF_API_KEY in Vercel" });
     }
 
-    // ✅ Convert Data URL → Base64 only
-    const base64 = image.split(",")[1];
+    // ✅ Convert Base64 → Binary Buffer
+    const base64Data = image.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
 
     // ✅ Call Hugging Face Router API
     const response = await fetch(
@@ -26,19 +27,17 @@ export default async function handler(req, res) {
         method: "POST",
         headers: {
           Authorization: `Bearer ${hfKey}`,
-          "Content-Type": "application/json",
+          "Content-Type": "application/octet-stream",
         },
-        body: JSON.stringify({
-          inputs: image, // ✅ Send full Data URL
-        }),
+        body: buffer, // ✅ Send binary image
       }
     );
 
     const data = await response.json();
 
-    console.log("HF RAW Response:", data);
+    console.log("HF Response:", data);
 
-    // ✅ If Hugging Face returns error
+    // ❌ Hugging Face error
     if (data.error) {
       return res.status(500).json({
         error: "Hugging Face Error",
@@ -46,7 +45,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ✅ Output label
+    // ✅ Flower label
     return res.status(200).json({
       result: data?.[0]?.label || "Unknown Flower",
     });

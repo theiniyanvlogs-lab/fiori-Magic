@@ -7,16 +7,16 @@ export default function App() {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Identify Flower (Hugging Face API)
+  // ✅ Identify Flower Button Click
   const handleIdentify = async () => {
     if (!image) {
       alert("🌸 Please upload a flower image first!");
       return;
     }
 
-    // ✅ Image size limit (3MB)
+    // ✅ Limit image size
     if (image.size > 3_000_000) {
-      alert("❌ Image too large. Please upload below 3MB.");
+      alert("❌ Image too large. Upload below 3MB.");
       return;
     }
 
@@ -27,10 +27,10 @@ export default function App() {
 
     reader.onloadend = async () => {
       try {
-        // ✅ Hugging Face needs FULL base64 Data URL
+        // ✅ FULL Base64 Data URL
         const base64 = reader.result?.toString();
 
-        // ✅ Call Backend API
+        // ✅ Send request to backend
         const res = await fetch("/api/identify", {
           method: "POST",
           headers: {
@@ -43,13 +43,20 @@ export default function App() {
 
         const data = await res.json();
 
-        console.log("Hugging Face Response:", data);
+        console.log("API Response:", data);
 
-        // ✅ Show Result
+        // ✅ Show error if backend fails
+        if (!res.ok) {
+          setResult("❌ Error: " + (data.error || "Server Failed"));
+          setLoading(false);
+          return;
+        }
+
+        // ✅ Show Flower Result
         if (data.result) {
           setResult("🌸 Flower Identified:\n\n" + data.result);
         } else {
-          setResult("❌ " + (data.error || "No flower identified"));
+          setResult("❌ No flower identified.");
         }
       } catch (err) {
         console.error(err);
@@ -62,7 +69,7 @@ export default function App() {
     reader.readAsDataURL(image);
   };
 
-  // ✅ Handle File Upload
+  // ✅ Handle Upload
   const handleFileChange = (file: File | null) => {
     setImage(file);
     setResult("");
@@ -78,24 +85,25 @@ export default function App() {
     <div
       style={{
         padding: "40px",
-        fontFamily: "sans-serif",
+        fontFamily: "Arial",
         textAlign: "center",
       }}
     >
       {/* Title */}
-      <h1 style={{ fontSize: "34px" }}>🌸 Trova Fiori</h1>
+      <h1 style={{ fontSize: "36px" }}>🌸 Trova Fiori</h1>
+
       <p style={{ fontSize: "18px", marginBottom: "25px" }}>
-        Upload a flower image and identify it using Hugging Face AI.
+        Upload a flower image and identify it using Hugging Face AI 🌼
       </p>
 
-      {/* Upload Input */}
+      {/* Upload */}
       <input
         type="file"
         accept="image/*"
         onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
       />
 
-      {/* Selected File Info */}
+      {/* File Info */}
       {image && (
         <p style={{ marginTop: "15px" }}>
           ✅ Selected: <b>{image.name}</b>
@@ -104,50 +112,50 @@ export default function App() {
         </p>
       )}
 
-      {/* Image Preview */}
+      {/* Preview */}
       {preview && (
         <div style={{ marginTop: "20px" }}>
           <img
             src={preview}
-            alt="Flower Preview"
+            alt="Preview"
             style={{
-              width: "200px",
-              borderRadius: "15px",
-              boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+              width: "260px",
+              borderRadius: "18px",
+              boxShadow: "0px 4px 12px rgba(0,0,0,0.25)",
             }}
           />
         </div>
       )}
 
-      {/* Identify Button */}
+      {/* Button */}
       <button
         onClick={handleIdentify}
         disabled={loading}
         style={{
-          padding: "14px 35px",
+          padding: "16px 40px",
           marginTop: "25px",
           backgroundColor: loading ? "gray" : "#0f9d58",
           color: "white",
-          fontSize: "18px",
+          fontSize: "20px",
           border: "none",
-          borderRadius: "14px",
+          borderRadius: "16px",
           cursor: "pointer",
         }}
       >
         {loading ? "⏳ Identifying..." : "Identify Flower 🌼"}
       </button>
 
-      {/* Result Output */}
+      {/* Output */}
       {result && (
         <div
           style={{
             marginTop: "30px",
-            padding: "20px",
+            padding: "22px",
             background: "#f0fdf4",
-            borderRadius: "15px",
-            fontSize: "18px",
+            borderRadius: "18px",
+            fontSize: "20px",
             whiteSpace: "pre-line",
-            border: "1px solid #cce7d0",
+            border: "2px solid #cce7d0",
           }}
         >
           {result}

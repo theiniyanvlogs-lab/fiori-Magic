@@ -10,45 +10,43 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No image received" });
     }
 
-    const hfKey = process.env.HF_API_KEY;
-    if (!hfKey) {
-      return res.status(500).json({ error: "Missing HF_API_KEY in Vercel" });
-    }
-
     // ✅ Convert Base64 → Buffer
     const base64Data = image.split(",")[1];
     const buffer = Buffer.from(base64Data, "base64");
 
-    // ✅ Use Stable Working Model
-    const MODEL =
-      "nateraw/flower-classification";
+    // ✅ Create FormData for iNaturalist
+    const formData = new FormData();
+    formData.append(
+      "image",
+      new Blob([buffer], { type: "image/jpeg" }),
+      "flower.jpg"
+    );
 
+    // ✅ Call iNaturalist API
     const response = await fetch(
-      `https://router.huggingface.co/hf-inference/models/${MODEL}`,
+      "https://api.inaturalist.org/v1/computervision/score_image",
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${hfKey}`,
-          "Content-Type": "application/octet-stream",
-        },
-        body: buffer,
+        body: formData,
       }
     );
 
     const data = await response.json();
 
-    console.log("HF Response:", data);
+    console.log("iNaturalist Response:", data);
 
-    if (!response.ok) {
-      return res.status(500).json({
-        error: "Hugging Face Request Failed",
-        details: data,
+    if (!data.results || data.results.length === 0) {
+      return res.status(200).json({
+        result: "No flower identified",
       });
     }
 
-    // ✅ Best Prediction
+    // ✅ Best Match
+    const top = data.results[0];
+
     return res.status(200).json({
-      result: data?.[0]?.label || "Unknown Flower",
+      result: `${top.taxon.name} (${top.taxon.preferred_common_name})`,
+      score: top.score,
     });
   } catch (err) {
     return res.status(500).json({

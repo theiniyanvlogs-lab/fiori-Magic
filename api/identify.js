@@ -6,41 +6,38 @@ export default async function handler(req, res) {
   try {
     const { image } = req.body;
 
-    if (!image) {
-      return res.status(400).json({ error: "No image provided" });
-    }
+    const token = process.env.HF_API_KEY;
 
-    const HF_KEY = process.env.HF_API_KEY;
-
-    if (!HF_KEY) {
+    if (!token) {
       return res.status(500).json({ error: "Missing HF_API_KEY" });
     }
 
-    // Convert base64 → binary buffer
-    const buffer = Buffer.from(image, "base64");
-
+    // Hugging Face flower classification model
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/nateraw/flower-classification",
+      "https://api-inference.huggingface.co/models/microsoft/resnet-50",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${HF_KEY}`,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: buffer,
+        body: JSON.stringify({
+          inputs: image,
+        }),
       }
     );
 
-    const data = await response.json();
+    const result = await response.json();
 
-    if (data.error) {
-      return res.status(500).json({ error: data.error });
+    if (result.error) {
+      return res.status(500).json({ error: result.error });
     }
 
     // Best prediction
-    const flower = data?.[0]?.label;
+    const flowerName = result?.[0]?.label;
 
     return res.status(200).json({
-      result: flower || "Flower not identified",
+      result: flowerName || "No flower identified",
     });
   } catch (err) {
     return res.status(500).json({

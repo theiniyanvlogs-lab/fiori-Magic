@@ -6,18 +6,14 @@ export default async function handler(req, res) {
   try {
     const { image, mimeType } = req.body;
 
-    if (!image) {
-      return res.status(400).json({ error: "No image provided" });
-    }
-
     const apiKey = process.env.GEMINI_API_KEY;
-
     if (!apiKey) {
       return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
     }
 
+    // ✅ Use correct supported model
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -26,7 +22,7 @@ export default async function handler(req, res) {
             {
               parts: [
                 {
-                  text: "Identify this flower. Reply only the flower name.",
+                  text: "Identify this flower. Reply only with flower name.",
                 },
                 {
                   inlineData: {
@@ -43,21 +39,23 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
+    // ✅ Gemini Error Handling
     if (data.error) {
       return res.status(500).json({
         error: data.error.message,
       });
     }
 
-    const flowerText =
+    // ✅ Extract Result
+    const flowerName =
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     return res.status(200).json({
-      result: flowerText || "No flower identified",
+      result: flowerName || "No flower identified",
     });
   } catch (err) {
     return res.status(500).json({
-      error: "Server crashed",
+      error: "Server Error",
       details: err.message,
     });
   }

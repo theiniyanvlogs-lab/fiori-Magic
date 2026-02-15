@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/identify.js": {
-      "maxDuration": 10
-    }
-  }
-}

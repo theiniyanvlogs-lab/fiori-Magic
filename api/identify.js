@@ -4,48 +4,43 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { image, mimeType } = req.body;
+    const { image } = req.body;
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
+    if (!image) {
+      return res.status(400).json({ error: "No image provided" });
     }
 
-    // ✅ NEW Gemini Model (Works for Images)
+    const HF_KEY = process.env.HF_API_KEY;
+
+    if (!HF_KEY) {
+      return res.status(500).json({ error: "Missing HF_API_KEY" });
+    }
+
+    // Convert base64 → binary buffer
+    const buffer = Buffer.from(image, "base64");
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      "https://api-inference.huggingface.co/models/nateraw/flower-classification",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: "Identify this flower. Reply only flower name." },
-                {
-                  inlineData: {
-                    mimeType: mimeType || "image/jpeg",
-                    data: image,
-                  },
-                },
-              ],
-            },
-          ],
-        }),
+        headers: {
+          Authorization: `Bearer ${HF_KEY}`,
+        },
+        body: buffer,
       }
     );
 
     const data = await response.json();
 
     if (data.error) {
-      return res.status(500).json({ error: data.error.message });
+      return res.status(500).json({ error: data.error });
     }
 
-    const flowerName =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    // Best prediction
+    const flower = data?.[0]?.label;
 
     return res.status(200).json({
-      result: flowerName?.trim() || "No flower identified",
+      result: flower || "Flower not identified",
     });
   } catch (err) {
     return res.status(500).json({

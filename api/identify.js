@@ -10,21 +10,16 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No image received" });
     }
 
-    // ✅ Convert Base64 → Blob
     const base64Data = image.split(",")[1];
     const buffer = Buffer.from(base64Data, "base64");
 
-    // ✅ Create native FormData (no package)
     const formData = new FormData();
-
-    // ⭐ Correct field name = "image"
     formData.append(
       "image",
       new Blob([buffer], { type: "image/jpeg" }),
       "flower.jpg"
     );
 
-    // ✅ Call iNaturalist FREE API
     const response = await fetch(
       "https://api.inaturalist.org/v1/computervision/score_image",
       {
@@ -37,13 +32,23 @@ export default async function handler(req, res) {
 
     console.log("iNaturalist Response:", data);
 
-    // ✅ Extract Flower Name
+    // ✅ If nothing detected
+    if (!data.results || data.results.length === 0) {
+      return res.status(200).json({
+        result: "❌ Could not detect flower. Try a closer photo.",
+      });
+    }
+
+    // ✅ Top prediction
+    const top = data.results[0];
+
     const flower =
-      data?.results?.[0]?.taxon?.preferred_common_name ||
-      data?.results?.[0]?.taxon?.name;
+      top.taxon.preferred_common_name ||
+      top.taxon.name ||
+      "Unknown Flower";
 
     return res.status(200).json({
-      result: flower || "No flower identified 😢",
+      result: `🌸 ${flower}`,
     });
   } catch (err) {
     return res.status(500).json({

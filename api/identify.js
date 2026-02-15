@@ -1,3 +1,5 @@
+import FormData from "form-data";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
@@ -14,20 +16,20 @@ export default async function handler(req, res) {
     const base64Data = image.split(",")[1];
     const buffer = Buffer.from(base64Data, "base64");
 
-    // ✅ Create FormData for iNaturalist
-    const formData = new FormData();
-    formData.append(
-      "image",
-      new Blob([buffer], { type: "image/jpeg" }),
-      "flower.jpg"
-    );
+    // ✅ Node FormData (works in Vercel)
+    const form = new FormData();
+    form.append("image", buffer, {
+      filename: "flower.jpg",
+      contentType: "image/jpeg",
+    });
 
-    // ✅ Call iNaturalist API
+    // ✅ Call iNaturalist Free API
     const response = await fetch(
       "https://api.inaturalist.org/v1/computervision/score_image",
       {
         method: "POST",
-        body: formData,
+        body: form,
+        headers: form.getHeaders(),
       }
     );
 
@@ -35,17 +37,16 @@ export default async function handler(req, res) {
 
     console.log("iNaturalist Response:", data);
 
+    // ❌ No results
     if (!data.results || data.results.length === 0) {
-      return res.status(200).json({
-        result: "No flower identified",
-      });
+      return res.json({ result: "No flower identified" });
     }
 
-    // ✅ Best Match
+    // ✅ Best match
     const top = data.results[0];
 
-    return res.status(200).json({
-      result: `${top.taxon.name} (${top.taxon.preferred_common_name})`,
+    return res.json({
+      result: `${top.taxon.preferred_common_name} (${top.taxon.name})`,
       score: top.score,
     });
   } catch (err) {

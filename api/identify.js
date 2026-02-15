@@ -18,7 +18,9 @@ export default async function handler(req, res) {
 
     // ✅ Prepare FormData for iNaturalist
     const form = new FormData();
-    form.append("file", buffer, {
+
+    // ⭐ Correct field name = "image"
+    form.append("image", buffer, {
       filename: "flower.jpg",
       contentType: "image/jpeg",
     });

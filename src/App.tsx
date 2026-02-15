@@ -2,27 +2,24 @@ import { useState } from "react";
 
 export default function App() {
   const [image, setImage] = useState<File | null>(null);
-  const [result, setResult] = useState<string>("");
+  const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Identify Flower Function
   const handleIdentify = async () => {
     if (!image) {
-      alert("Please upload a flower image first!");
+      alert("Upload a flower image first!");
       return;
     }
 
     setLoading(true);
-    setResult("🌼 Identifying flower... Please wait");
+    setResult("🌼 Identifying... Please wait");
 
     const reader = new FileReader();
 
     reader.onloadend = async () => {
       try {
-        // ✅ Convert image to Base64
         const base64 = reader.result?.toString().split(",")[1];
 
-        // ✅ Call Backend API (Send image + mimeType)
         const res = await fetch("/api/identify", {
           method: "POST",
           headers: {
@@ -30,24 +27,18 @@ export default function App() {
           },
           body: JSON.stringify({
             image: base64,
-            mimeType: image.type, // ✅ FIX: Supports JPG + PNG
+            mimeType: image.type, // ✅ JPEG/PNG support
           }),
         });
 
         const data = await res.json();
 
-        console.log("Backend Response:", data);
-
-        // ✅ Show Result
         if (data.result) {
           setResult("🌸 Flower Identified:\n\n" + data.result);
-        } else if (data.error) {
-          setResult("❌ Gemini Error:\n" + data.error);
         } else {
-          setResult("❌ No flower identified");
+          setResult("❌ " + (data.error || "No flower found"));
         }
       } catch (err) {
-        console.error("Error:", err);
         setResult("❌ Error identifying flower");
       }
 
@@ -58,71 +49,45 @@ export default function App() {
   };
 
   return (
-    <div
-      style={{
-        padding: "40px",
-        fontFamily: "sans-serif",
-        textAlign: "center",
-      }}
-    >
-      <h1 style={{ fontSize: "32px", marginBottom: "10px" }}>
-        🌸 Trova Fiori
-      </h1>
+    <div style={{ padding: 40, textAlign: "center" }}>
+      <h1>🌸 Trova Fiori</h1>
 
-      <p style={{ fontSize: "18px", marginBottom: "30px" }}>
-        Upload a flower image and identify it using AI.
-      </p>
-
-      {/* Upload Input */}
       <input
         type="file"
         accept="image/*"
         onChange={(e) => setImage(e.target.files?.[0] || null)}
       />
 
-      <br />
-      <br />
-
-      {/* Selected File */}
       {image && (
-        <p style={{ fontSize: "16px" }}>
+        <p>
           ✅ Selected: <b>{image.name}</b>
           <br />
           📌 Type: <b>{image.type}</b>
         </p>
       )}
 
-      <br />
-
-      {/* Identify Button */}
       <button
         onClick={handleIdentify}
         disabled={loading}
         style={{
           padding: "14px 30px",
+          marginTop: 20,
           backgroundColor: loading ? "gray" : "#0f9d58",
           color: "white",
           border: "none",
-          borderRadius: "12px",
-          fontSize: "18px",
-          cursor: "pointer",
+          borderRadius: 12,
         }}
       >
         {loading ? "Identifying..." : "Identify Flower 🌼"}
       </button>
 
-      <br />
-      <br />
-
-      {/* Result Output */}
       {result && (
         <div
           style={{
-            marginTop: "20px",
-            padding: "20px",
-            borderRadius: "12px",
+            marginTop: 30,
+            padding: 20,
             background: "#f0fdf4",
-            fontSize: "18px",
+            borderRadius: 12,
             whiteSpace: "pre-line",
           }}
         >

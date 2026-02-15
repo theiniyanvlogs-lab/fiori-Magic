@@ -11,9 +11,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Missing HF_API_KEY" });
     }
 
-    // ✅ NEW Hugging Face Router Endpoint
+    // ✅ Flower-Specific Model
     const response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/google/vit-base-patch16-224",
+      "https://router.huggingface.co/hf-inference/models/julien-c/flower-classification",
       {
         method: "POST",
         headers: {
@@ -34,12 +34,12 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: result.error });
     }
 
-    // ✅ Best prediction
-    const flower =
+    // ✅ Best Prediction
+    const flowerName =
       result?.[0]?.label || "No flower identified";
 
     return res.status(200).json({
-      result: flower,
+      result: flowerName,
     });
   } catch (err) {
     return res.status(500).json({

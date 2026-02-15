@@ -1,5 +1,3 @@
-import FormData from "form-data";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
@@ -12,26 +10,26 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No image received" });
     }
 
-    // ✅ Convert Base64 → Buffer
+    // ✅ Convert Base64 → Blob
     const base64Data = image.split(",")[1];
     const buffer = Buffer.from(base64Data, "base64");
 
-    // ✅ Prepare FormData for iNaturalist
-    const form = new FormData();
+    // ✅ Create native FormData (no package)
+    const formData = new FormData();
 
     // ⭐ Correct field name = "image"
-    form.append("image", buffer, {
-      filename: "flower.jpg",
-      contentType: "image/jpeg",
-    });
+    formData.append(
+      "image",
+      new Blob([buffer], { type: "image/jpeg" }),
+      "flower.jpg"
+    );
 
-    // ✅ Call iNaturalist Vision API (FREE)
+    // ✅ Call iNaturalist FREE API
     const response = await fetch(
       "https://api.inaturalist.org/v1/computervision/score_image",
       {
         method: "POST",
-        body: form,
-        headers: form.getHeaders(),
+        body: formData,
       }
     );
 
@@ -44,14 +42,8 @@ export default async function handler(req, res) {
       data?.results?.[0]?.taxon?.preferred_common_name ||
       data?.results?.[0]?.taxon?.name;
 
-    if (!flower) {
-      return res.status(200).json({
-        result: "No flower identified 😢",
-      });
-    }
-
     return res.status(200).json({
-      result: flower,
+      result: flower || "No flower identified 😢",
     });
   } catch (err) {
     return res.status(500).json({

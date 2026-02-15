@@ -2,17 +2,26 @@ import { useState } from "react";
 
 export default function App() {
   const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ✅ Identify Flower Function
   const handleIdentify = async () => {
     if (!image) {
-      alert("Upload a flower image first!");
+      alert("🌸 Please upload a flower image first!");
+      return;
+    }
+
+    // ✅ Image size limit (3MB)
+    if (image.size > 3_000_000) {
+      alert("❌ Image too large. Please upload below 3MB.");
       return;
     }
 
     setLoading(true);
-    setResult("🌼 Identifying... Please wait");
+    setResult("🌼 Identifying flower... Please wait");
 
     const reader = new FileReader();
 
@@ -20,6 +29,7 @@ export default function App() {
       try {
         const base64 = reader.result?.toString().split(",")[1];
 
+        // ✅ Call Backend API
         const res = await fetch("/api/identify", {
           method: "POST",
           headers: {
@@ -27,19 +37,23 @@ export default function App() {
           },
           body: JSON.stringify({
             image: base64,
-            mimeType: image.type, // ✅ JPEG/PNG support
+            mimeType: image.type, // ✅ Supports JPG + PNG
           }),
         });
 
         const data = await res.json();
 
+        console.log("Gemini Response:", data);
+
+        // ✅ Show Result
         if (data.result) {
           setResult("🌸 Flower Identified:\n\n" + data.result);
         } else {
-          setResult("❌ " + (data.error || "No flower found"));
+          setResult("❌ " + (data.error || "No flower identified"));
         }
       } catch (err) {
-        setResult("❌ Error identifying flower");
+        console.error(err);
+        setResult("❌ Server error. Please try again.");
       }
 
       setLoading(false);
@@ -48,47 +62,92 @@ export default function App() {
     reader.readAsDataURL(image);
   };
 
-  return (
-    <div style={{ padding: 40, textAlign: "center" }}>
-      <h1>🌸 Trova Fiori</h1>
+  // ✅ Handle File Upload
+  const handleFileChange = (file: File | null) => {
+    setImage(file);
+    setResult("");
 
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    } else {
+      setPreview(null);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        padding: "40px",
+        fontFamily: "sans-serif",
+        textAlign: "center",
+      }}
+    >
+      {/* Title */}
+      <h1 style={{ fontSize: "34px" }}>🌸 Trova Fiori</h1>
+      <p style={{ fontSize: "18px", marginBottom: "25px" }}>
+        Upload a flower image and identify it using Gemini AI.
+      </p>
+
+      {/* Upload Input */}
       <input
         type="file"
         accept="image/*"
-        onChange={(e) => setImage(e.target.files?.[0] || null)}
+        onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
       />
 
+      {/* Selected File Info */}
       {image && (
-        <p>
+        <p style={{ marginTop: "15px" }}>
           ✅ Selected: <b>{image.name}</b>
           <br />
           📌 Type: <b>{image.type}</b>
         </p>
       )}
 
+      {/* Image Preview */}
+      {preview && (
+        <div style={{ marginTop: "20px" }}>
+          <img
+            src={preview}
+            alt="Flower Preview"
+            style={{
+              width: "200px",
+              borderRadius: "15px",
+              boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+            }}
+          />
+        </div>
+      )}
+
+      {/* Identify Button */}
       <button
         onClick={handleIdentify}
         disabled={loading}
         style={{
-          padding: "14px 30px",
-          marginTop: 20,
+          padding: "14px 35px",
+          marginTop: "25px",
           backgroundColor: loading ? "gray" : "#0f9d58",
           color: "white",
+          fontSize: "18px",
           border: "none",
-          borderRadius: 12,
+          borderRadius: "14px",
+          cursor: "pointer",
         }}
       >
-        {loading ? "Identifying..." : "Identify Flower 🌼"}
+        {loading ? "⏳ Identifying..." : "Identify Flower 🌼"}
       </button>
 
+      {/* Result Output */}
       {result && (
         <div
           style={{
-            marginTop: 30,
-            padding: 20,
+            marginTop: "30px",
+            padding: "20px",
             background: "#f0fdf4",
-            borderRadius: 12,
+            borderRadius: "15px",
+            fontSize: "18px",
             whiteSpace: "pre-line",
+            border: "1px solid #cce7d0",
           }}
         >
           {result}

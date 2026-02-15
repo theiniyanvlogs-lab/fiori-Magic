@@ -6,18 +6,14 @@ export default async function handler(req, res) {
   try {
     const { image, mimeType } = req.body;
 
-    if (!image) {
-      return res.status(400).json({ error: "No image provided" });
-    }
-
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
     }
 
-    // ✅ Correct Stable Model + Correct API Version
+    // ✅ WORKING MODEL FOR IMAGE INPUT
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro-vision:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,8 +36,6 @@ export default async function handler(req, res) {
     );
 
     const data = await response.json();
-
-    console.log("Gemini Response:", data);
 
     if (data.error) {
       return res.status(500).json({ error: data.error.message });

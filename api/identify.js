@@ -6,19 +6,18 @@ export default async function handler(req, res) {
   try {
     const { image } = req.body;
 
-    const token = process.env.HF_API_KEY;
-
-    if (!token) {
+    const hfKey = process.env.HF_API_KEY;
+    if (!hfKey) {
       return res.status(500).json({ error: "Missing HF_API_KEY" });
     }
 
-    // Hugging Face flower classification model
+    // ✅ NEW Hugging Face Router Endpoint
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/microsoft/resnet-50",
+      "https://router.huggingface.co/hf-inference/models/google/vit-base-patch16-224",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${hfKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -29,15 +28,18 @@ export default async function handler(req, res) {
 
     const result = await response.json();
 
+    console.log("HF Result:", result);
+
     if (result.error) {
       return res.status(500).json({ error: result.error });
     }
 
-    // Best prediction
-    const flowerName = result?.[0]?.label;
+    // ✅ Best prediction
+    const flower =
+      result?.[0]?.label || "No flower identified";
 
     return res.status(200).json({
-      result: flowerName || "No flower identified",
+      result: flower,
     });
   } catch (err) {
     return res.status(500).json({

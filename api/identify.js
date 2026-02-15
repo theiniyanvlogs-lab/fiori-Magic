@@ -6,12 +6,20 @@ export default async function handler(req, res) {
   try {
     const { image } = req.body;
 
+    if (!image) {
+      return res.status(400).json({ error: "No image provided" });
+    }
+
     const hfKey = process.env.HF_API_KEY;
+
     if (!hfKey) {
       return res.status(500).json({ error: "Missing HF_API_KEY" });
     }
 
-    // ✅ Flower-Specific Model
+    // ✅ Convert DataURL → Pure Base64
+    const pureBase64 = image.split(",")[1];
+
+    // ✅ HuggingFace Router Endpoint
     const response = await fetch(
       "https://router.huggingface.co/hf-inference/models/julien-c/flower-classification",
       {
@@ -21,7 +29,7 @@ export default async function handler(req, res) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          inputs: image,
+          inputs: pureBase64,
         }),
       }
     );
@@ -34,12 +42,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: result.error });
     }
 
-    // ✅ Best Prediction
-    const flowerName =
-      result?.[0]?.label || "No flower identified";
-
     return res.status(200).json({
-      result: flowerName,
+      result: result?.[0]?.label || "Unknown flower",
     });
   } catch (err) {
     return res.status(500).json({

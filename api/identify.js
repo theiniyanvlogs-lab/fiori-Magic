@@ -11,9 +11,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
     }
 
-    // ✅ Use correct supported model
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -21,9 +20,7 @@ export default async function handler(req, res) {
           contents: [
             {
               parts: [
-                {
-                  text: "Identify this flower. Reply only with flower name.",
-                },
+                { text: "Identify this flower. Reply only flower name." },
                 {
                   inlineData: {
                     mimeType: mimeType || "image/jpeg",
@@ -39,14 +36,10 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // ✅ Gemini Error Handling
     if (data.error) {
-      return res.status(500).json({
-        error: data.error.message,
-      });
+      return res.status(500).json({ error: data.error.message });
     }
 
-    // ✅ Extract Result
     const flowerName =
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
